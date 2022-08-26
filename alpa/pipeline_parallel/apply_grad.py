@@ -773,6 +773,8 @@ class ApplyGradRewriter:
                     eqn.primitive, mesh_vars, gensym_fn, final_var, literals)
                 new_eqns_before_var[final_var] = appended_eqns
                 allreduce_groups.add(tuple(allreduce_group))
+        if len(allreduce_groups) > 1:
+            raise NotImplementedError()
         new_eqns = []
         for eqn_idx, eqn in enumerate(self.eqns):
             if eqn_idx in removed_eqns:
