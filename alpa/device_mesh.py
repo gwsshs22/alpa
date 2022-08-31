@@ -56,6 +56,7 @@ from alpa.util import (benchmark_func, list_gpu_info, OrderedSet,
                        update_jax_platform, is_ray_node_resource,
                        try_import_ray_worker, create_placement_group,
                        get_bundle_idx, retrieve_placement_group)
+from alpa import tracing_util
 
 ray_worker = try_import_ray_worker()
 
@@ -156,6 +157,7 @@ class MeshHostWorker:
                     worker_nccl_util.to_signal_buffer(jax_tensor))
 
         self.launched = True
+        tracing_util.worker_start_tracing(f"mesh-{mesh_id}-host-{host_id}")
 
     ##### Buffer Related Functions #####
     def put_buffers(self,
@@ -573,6 +575,7 @@ class MeshHostWorker:
         self.sync_move_worker()
         ray.kill(self.move_worker)
         self.move_worker = None
+        tracing_util.worker_stop_tracing()
 
 
 ########################################
@@ -980,7 +983,8 @@ class DistributedPhysicalDeviceMesh(PhysicalDeviceMesh):
                 "XLA_FLAGS": (os.environ.get("XLA_FLAGS", "") +
                               f" --xla_gpu_autotune_level"
                               f"={global_config.xla_gpu_autotune_level}"),
-
+                "ALPA_TRACE_ENABLED": os.environ.get("ALPA_TRACE_ENABLED", "False"),
+                "ALPA_TRACE_LOG_BASE_DIR": os.environ.get("ALPA_TRACE_LOG_BASE_DIR", "")
                 # "NCCL_LAUNCH_MODE": "PARALLEL",
                 # "XLA_FLAGS": "--xla_dump_to=hlo --xla_dump_hlo_pass_re=.*"
                 # "NCCL_DEBUG": "INFO" if i == 0 else "VERSION",
